@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+SANDBOX_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+export SANDBOX_ROOT
+cd "$SANDBOX_ROOT"
+if command -v cargo >/dev/null 2>&1; then
+    exec cargo run --quiet --locked --release -- "$@"
+fi
+if [ -x "$SANDBOX_ROOT/.runtime/cargo/bin/cargo" ]; then
+    export CARGO_HOME="$SANDBOX_ROOT/.runtime/cargo"
+    export RUSTUP_HOME="$SANDBOX_ROOT/.runtime/rustup"
+    exec "$CARGO_HOME/bin/cargo" run --quiet --locked --release -- "$@"
+fi
+if [ -x "$SANDBOX_ROOT/target/release/sandbox" ]; then
+    exec "$SANDBOX_ROOT/target/release/sandbox" "$@"
+fi
+printf '%s\n' 'Install Rust with rustup (https://rustup.rs), then run ./sandbox again.' >&2
+exit 1

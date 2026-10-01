@@ -1,0 +1,57 @@
+name: codex-egress-sandbox
+
+services:
+  gateway:
+    image: codex-egress-sandbox-gateway:1
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, SETUID, SETGID, SETPCAP]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ./config:/policy:ro
+    healthcheck:
+      test: [CMD, sandbox-helper, gateway, healthcheck]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    # No published proxy port, Docker socket, or workspace mount.
+
+  agent:
+    image: codex-egress-sandbox-agent:${CODEX_VERSION:-0.159.3}-${SANDBOX_IMAGE_TARGET:-base}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${SANDBOX_IMAGE_TARGET:-base}
+      args:
+        CODEX_VERSION: ${CODEX_VERSION:-0.159.3}
+    network_mode: service:gateway
+    depends_on:
+      gateway:
+        condition: service_healthy
+    user: "0:0"
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    working_dir: /workspace
+    environment:
+      HTTP_PROXY: http://127.0.0.1:3128
+      HTTPS_PROXY: http://127.0.0.1:3128
+      http_proxy: http://127.0.0.1:3128
+      https_proxy: http://127.0.0.1:3128
+      NO_PROXY: localhost,127.0.0.1,::1
+      no_proxy: localhost,127.0.0.1,::1
+      NODE_USE_ENV_PROXY: "1"
+      NPM_CONFIG_PROXY: http://127.0.0.1:3128
+      NPM_CONFIG_HTTPS_PROXY: http://127.0.0.1:3128
+      PIP_PROXY: http://127.0.0.1:3128
+      TERM: ${TERM:-xterm-256color}
+    volumes:
+      - ${SANDBOX_WORKSPACE:-./workspace}:/workspace
+      - codex-state:/root/.codex
+      - ./config/codex.toml:/etc/codex-sandbox/config.toml:ro
+    # The container filesystem is writable. Only the egress boundary is enforced.
+
+volumes:
+  codex-state:

@@ -1,0 +1,14 @@
+**
+!Dockerfile
+!Dockerfile.gateway
+!container/
+!container/**
+!gateway/
+!gateway/**
+!Cargo.toml
+!Cargo.lock
+!src/
+!src/**
+!tests/
+!tests/verify.py
+!tests/check_codex.py

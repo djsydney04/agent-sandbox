@@ -1,0 +1,7 @@
+# Append to config/codex.toml after building SANDBOX_IMAGE_TARGET=browser.
+# Add each site and its required asset/API hosts to config/network.json.
+[mcp_servers.browser]
+command = "playwright-mcp"
+args = ["--headless", "--browser", "chromium", "--executable-path", "/usr/bin/chromium", "--proxy-server", "http://127.0.0.1:3128", "--no-sandbox"]
+enabled = true
+enabled_tools = ["browser_navigate", "browser_snapshot", "browser_click", "browser_type", "browser_wait_for", "browser_take_screenshot", "browser_close", "browser_tabs"]

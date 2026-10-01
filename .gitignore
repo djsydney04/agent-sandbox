@@ -1,0 +1,7 @@
+.env
+.runtime/
+workspace/*
+!workspace/.gitkeep
+__pycache__/
+*.pyc
+target/

@@ -1,0 +1,10 @@
+{
+  "allow": [
+    "api.openai.com",
+    "auth.openai.com",
+    "chatgpt.com"
+  ],
+  "deny": [],
+  "ports": [80, 443],
+  "private_allow": []
+}

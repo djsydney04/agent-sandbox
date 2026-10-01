@@ -1,0 +1,24 @@
+# Codex runs freely inside Docker; the separate gateway enforces egress.
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+cli_auth_credentials_store = "file"
+web_search = "disabled"
+check_for_update_on_startup = false
+
+[analytics]
+enabled = false
+
+# Enable local MCP servers individually below. Their processes stay in Docker.
+# Hosted capabilities are off by default; see docs/allowlisting.md before enabling.
+[features]
+apps = false
+plugins = false
+browser_use = false
+browser_use_external = false
+browser_use_full_cdp_access = false
+computer_use = false
+in_app_browser = false
+image_generation = false
+hooks = false
+multi_agent = false
+network_proxy = false
