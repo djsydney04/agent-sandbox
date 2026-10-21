@@ -9,7 +9,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends squid iptables util-linux ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 egress-proxy \
-    && useradd --uid 10001 --gid 10001 --no-create-home egress-proxy
+    && useradd --uid 10001 --gid 10001 --no-create-home egress-proxy \
+    && dpkg --compare-versions \
+        "$(dpkg-query --show --showformat='${Version}' ca-certificates)" ge '20250419~deb12u2'
 COPY --from=helper /build/target/release/sandbox /usr/local/bin/sandbox-helper
 COPY gateway/entrypoint.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh

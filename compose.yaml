@@ -19,13 +19,13 @@ services:
     # No published proxy port, Docker socket, or workspace mount.
 
   agent:
-    image: codex-egress-sandbox-agent:${CODEX_VERSION:-0.159.3}-${SANDBOX_IMAGE_TARGET:-base}
+    image: codex-egress-sandbox-agent:${CODEX_VERSION:-0.164.0-alpha.9}-${SANDBOX_IMAGE_TARGET:-base}
     build:
       context: .
       dockerfile: Dockerfile
       target: ${SANDBOX_IMAGE_TARGET:-base}
       args:
-        CODEX_VERSION: ${CODEX_VERSION:-0.159.3}
+        CODEX_VERSION: ${CODEX_VERSION:-0.164.0-alpha.9}
     network_mode: service:gateway
     depends_on:
       gateway:
