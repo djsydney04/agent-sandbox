@@ -51,6 +51,12 @@ These guarantees assume the host Docker engine, gateway image, Squid, kernel iso
 - Docker pulls, image builds, package repositories used by Dockerfile instructions, and VM provisioning use the trusted host/engine network. They are outside the running-agent policy.
 - The Codex and Rust versions, Cargo dependency lockfile, and base-image digests are pinned. OS packages update on fresh builds; this is repeatable configuration, not byte-identical image reproduction. For immutable deployment, distribute the built image digest.
 
+## Resource limits
+
+Agent containers default to 2 GiB memory including swap, 2 CPUs, and 512 processes/threads. Configure `SANDBOX_MEMORY`, `SANDBOX_CPUS`, and `SANDBOX_PIDS` in `.env` before starting new sessions. These are per-container limits; image builds, the gateway, aggregate concurrent sessions, and workspace disk usage are not capped by them.
+
 ## Verification
 
 Unit tests cover parsing, injection rejection, exact and suffix matching, deny precedence, private exceptions, empty allowlists, atomic CLI edits, and fingerprints. Live tests run in the actual container with its actual firewall. The separate runtime test project verifies policy reloads, private-address resolution, redirects, and proxy failure. No tests require a real API key, model inference, a host login, or another project.
+
+GitHub Actions runs Rust tests, formatting, lint checks, and CLI regression tests, plus the isolated live suite for both base and browser images. CLI regression tests substitute Docker responses to test launcher behavior; the live suite checks actual container enforcement and resource settings.

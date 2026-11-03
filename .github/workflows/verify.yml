@@ -1,0 +1,35 @@
+name: Verify
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show
+      - run: cargo fmt --check
+      - run: cargo test --locked
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo build --locked
+      - run: python3 tests/cli.py
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [base, browser]
+    env:
+      SANDBOX_IMAGE_TARGET: ${{ matrix.image }}
+      SANDBOX_DOCKER: docker
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show
+      - run: ./sandbox build
+      - run: python3 tests/runtime.py

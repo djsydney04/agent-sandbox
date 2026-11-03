@@ -33,6 +33,10 @@ services:
     user: "0:0"
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+    mem_limit: ${SANDBOX_MEMORY:-2g}
+    memswap_limit: ${SANDBOX_MEMORY:-2g}
+    cpus: ${SANDBOX_CPUS:-2.0}
+    pids_limit: ${SANDBOX_PIDS:-512}
     init: true
     working_dir: /workspace
     environment:

@@ -37,7 +37,7 @@ enum Action {
     Reload,
     /// Stop this project's containers; preserve login state.
     Down,
-    /// Show runtime, versions, policy fingerprint, and capabilities.
+    /// Inspect containers, images, and policy without changing runtime state.
     Doctor,
     /// Run live firewall checks without a model request.
     Verify,
@@ -191,6 +191,9 @@ impl Runtime {
                 "CODEX_VERSION",
                 "SANDBOX_IMAGE_TARGET",
                 "SANDBOX_WORKSPACE",
+                "SANDBOX_MEMORY",
+                "SANDBOX_CPUS",
+                "SANDBOX_PIDS",
                 "TERM",
             ] {
                 if let Ok(value) = env::var(name) {
@@ -279,10 +282,13 @@ impl Runtime {
                     );
                     fs::create_dir_all(source)?;
                     let source = source.canonicalize()?;
-                    ensure!(
-                        !self.root.join("config").starts_with(&source),
-                        "The workspace must not contain this sandbox's policy files. Use ./workspace or a separate project directory."
-                    );
+                    for policy_path in ["config", "config/network.json", "config/codex.toml"] {
+                        let policy_path = self.root.join(policy_path).canonicalize()?;
+                        ensure!(
+                            !policy_path.starts_with(&source),
+                            "The workspace must not contain this sandbox's policy files. Use ./workspace or a separate project directory."
+                        );
+                    }
                 }
             }
         }
@@ -291,12 +297,12 @@ impl Runtime {
 
     fn ensure_up(&self, policy: &Policy, force: bool) -> Result<()> {
         self.check_workspace()?;
-        self.checked(&["up", "-d", "--wait", "gateway"])?;
+        eprint!("{}", self.capture(&["up", "-d", "--wait", "gateway"])?);
         let active = self.capture(&["exec", "-T", "gateway", "cat", "/run/policy.sha256"])?;
         if force || active.trim() != policy.fingerprint() {
-            println!("Applying policy; existing proxied connections will close.");
-            self.checked(&["restart", "gateway"])?;
-            self.checked(&["up", "-d", "--wait", "gateway"])?;
+            eprintln!("Applying policy; existing proxied connections will close.");
+            eprint!("{}", self.capture(&["restart", "gateway"])?);
+            eprint!("{}", self.capture(&["up", "-d", "--wait", "gateway"])?);
             let active = self.capture(&["exec", "-T", "gateway", "cat", "/run/policy.sha256"])?;
             ensure!(
                 active.trim() == policy.fingerprint(),
@@ -537,20 +543,27 @@ fn execute(cli: Cli) -> Result<i32> {
         runtime.checked(&["build"])?;
         return Ok(0);
     }
+    if matches!(cli.command, Action::Doctor) {
+        runtime.checked(&["ps", "--all"])?;
+        runtime.checked(&["images"])?;
+        println!("Configured policy SHA256: {}", policy.fingerprint());
+        let running = runtime.capture(&["ps", "--status", "running", "-q", "gateway"])?;
+        if running.trim().is_empty() {
+            println!("Gateway is stopped or absent. Run ./sandbox up to start it.");
+        } else {
+            let active =
+                runtime.capture(&["exec", "-T", "gateway", "cat", "/run/policy.sha256"])?;
+            println!("Running policy SHA256: {}", active.trim());
+            if active.trim() != policy.fingerprint() {
+                println!("Policy changes are pending. Run ./sandbox reload to apply them.");
+            }
+        }
+        return Ok(0);
+    }
     runtime.ensure_up(&policy, matches!(cli.command, Action::Reload))?;
     let mut no_tty = false;
     let command = match cli.command {
         Action::Up | Action::Reload => return Ok(0),
-        Action::Doctor => {
-            runtime.checked(&["ps"])?;
-            println!("Policy SHA256: {}", policy.fingerprint());
-            no_tty = true;
-            strings(&[
-                "sh",
-                "-c",
-                "codex --version && python3 --version && git --version && grep -E \"^(Uid|CapEff|CapBnd|NoNewPrivs):\" /proc/self/status",
-            ])
-        }
         Action::Verify => {
             no_tty = true;
             strings(&["python3", "/opt/sandbox/verify.py"])

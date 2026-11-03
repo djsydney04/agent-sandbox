@@ -62,7 +62,7 @@ See [the allowlisting guide](docs/allowlisting.md) for domains, ports, local end
 | `./sandbox allow check example.com` | Check host matching without making a network request |
 | `./sandbox reload` | Apply network changes and terminate old proxy tunnels |
 | `./sandbox logs --follow` | Watch allowed and denied destinations |
-| `./sandbox doctor` | Show runtime, versions, policy fingerprint, and capabilities |
+| `./sandbox doctor` | Inspect containers, images, and pending policy changes without restarting |
 | `./sandbox verify` | Run live firewall checks without credentials or model calls |
 | `./sandbox login-status` | Check the sandbox's own authentication |
 | `./sandbox logout` | Remove its cached authentication |
@@ -70,6 +70,10 @@ See [the allowlisting guide](docs/allowlisting.md) for domains, ports, local end
 | `./sandbox vm start` / `./sandbox vm stop` | Start or stop the dedicated macOS Lima runtime |
 
 Codex runs with `approval_policy = "never"` and `danger-full-access` inside Docker. The launcher passes the corresponding CLI flag explicitly. The external Docker firewall remains in force for the Codex client and every process it starts. [Official OpenAI documentation](https://learn.chatgpt.com/docs/agent-approvals-security) distinguishes approval policy from sandbox enforcement.
+
+Each agent container defaults to 2 GiB of memory (including swap), 2 CPUs, and 512 processes/threads. Set `SANDBOX_MEMORY`, `SANDBOX_CPUS`, and `SANDBOX_PIDS` in `.env` for larger builds. Limits apply to new containers, not the gateway or image builds. Concurrent sessions each receive their own limits; workspace disk usage is not capped.
+
+`doctor` only inspects state; it never starts containers or applies policy changes. `run --json` reserves standard output for agent events and sends setup messages to standard error.
 
 ## Browser and MCP tools
 
@@ -88,6 +92,8 @@ Hosted search, apps, plugins, image generation, and host browser/computer access
 
 ```sh
 cargo test --locked
+cargo build --locked
+python3 tests/cli.py
 cargo clippy --locked --all-targets -- -D warnings
 ./sandbox verify
 python3 tests/runtime.py

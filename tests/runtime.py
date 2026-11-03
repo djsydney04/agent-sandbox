@@ -110,6 +110,11 @@ http.server.HTTPServer(("127.0.0.1",8123),Handler).serve_forever()
             # explicit private-host/port/IP exception.
             fixture_container = project + '-fixture'
             compose('run','-d','--no-deps','--name',fixture_container,'agent','python3','/workspace/fixture.py')
+            inspected = subprocess.run(docker_command() + ['inspect', fixture_container],capture_output=True,text=True,check=True,timeout=15)
+            limits = json.loads(inspected.stdout)[0]['HostConfig']
+            check('Agent has memory, CPU, and process limits',
+                  limits['Memory'] > 0 and limits['NanoCpus'] > 0 and limits['PidsLimit'] > 0)
+            check('Agent cannot use swap beyond its memory limit', limits['MemorySwap'] == limits['Memory'])
             status, code = http_status('http://private-test.example:8123/')
             check('Explicit host + port + private IP permits local fixture',code == 0 and status == '200',status)
             redirected = run_agent('curl','-sS','-L','--max-time','15','-o','/dev/null','-w','%{http_code}','http://private-test.example:8123/redirect')

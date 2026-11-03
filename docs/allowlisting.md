@@ -34,7 +34,7 @@ Use lowercase ASCII hostnames or punycode. Do not include a protocol, path, quer
 
 `remove` removes exactly the specified pattern from both allow and deny. It does not erase a broader suffix that still matches the same host. `check` reports the host rule; it does not resolve DNS or test port/private-address permission.
 
-The Rust CLI and gateway share one validated policy parser. `./sandbox allow fingerprint` prints its canonical SHA256; `doctor` shows the same fingerprint for the applied policy.
+The Rust CLI and gateway share one validated policy parser. `./sandbox allow fingerprint` prints its canonical SHA256; `doctor` shows the configured fingerprint and, if the gateway is running, its active fingerprint. It reports pending changes without applying them.
 
 Policy edits do not affect an already running proxy until reload. A new launcher operation applies any changed policy automatically. Reload terminates open tunnels; create a new session afterward. This matters when revoking permission: an existing TLS connection must not keep using the old decision.
 
