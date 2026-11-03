@@ -5,3 +5,4 @@ workspace/*
 __pycache__/
 *.pyc
 target/
+dist/

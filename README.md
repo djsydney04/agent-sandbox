@@ -4,9 +4,15 @@ A small, independent Docker sandbox for unattended Codex work. Codex can edit fi
 
 The CLI, allowlist parser, proxy configuration generator, healthcheck, and VM helpers are implemented in Rust. The host and gateway use the same policy implementation. The project has its own images, network, credential volume, and optional test VM. It does not mount your home directory, host Codex configuration, SSH agent, or Docker socket.
 
+## Download a release
+
+Download the bundle for your machine from [GitHub Releases](https://github.com/djsydney04/agent-sandbox/releases). Linux bundles support x86-64 and ARM64 (glibc 2.35 or newer, including Ubuntu 22.04+ and WSL); macOS bundles support Intel and Apple Silicon. Windows users should use the Linux bundle inside WSL.
+
+Check the archive against `SHA256SUMS` (`sha256sum -c SHA256SUMS --ignore-missing` on Linux, or `shasum -a 256 <archive>` on macOS). Extract it, open the extracted directory, then follow the commands below. The included CLI runs without Rust on your host; Docker with Compose v2 is still required. Keep the whole extracted directory together because the CLI needs the Compose file, configuration, and image build sources. The macOS binary is not signed or notarized.
+
 ## Start
 
-Install [Rust through rustup](https://rustup.rs) and Docker with Compose v2 on the host. Use macOS, Linux, or WSL on Windows. The project pins Rust 1.90.0 and commits `Cargo.lock`; `./sandbox` builds and runs the Rust CLI automatically. Start Docker, then:
+Install Docker with Compose v2 on the host. For a source checkout, also install [Rust through rustup](https://rustup.rs); release bundles already include the CLI. Use macOS, Linux, or WSL on Windows. The project pins Rust 1.90.0 and commits `Cargo.lock`; `./sandbox` builds and runs the Rust CLI automatically. Start Docker, then:
 
 ```sh
 cp .env.example .env
@@ -115,3 +121,9 @@ cargo build --locked --release
 ```
 
 The resulting binary can run without Cargo or a Python interpreter; keep `compose.yaml` and `config/` with the project and pass `--root` when running elsewhere. The gateway builds its Linux copy from the same Rust sources in a multi-stage Dockerfile. Rust and Cargo stay out of the final gateway image. The small shell entrypoints only launch the binary or install Linux firewall rules before dropping privileges.
+
+## Publishing releases
+
+Update the package version in `Cargo.toml` and `Cargo.lock`, commit and push the changes, then push a matching tag, for example `git tag v0.1.1` followed by `git push origin v0.1.1`. Use a suffix such as `v0.2.0-rc.1` for a prerelease.
+
+The release workflow builds native Linux and macOS bundles for x86-64 and ARM64, checks that each CLI version matches the tag, and smoke-tests each package. Publication waits for the Rust/CLI checks and the base/browser live runtime suites. It then creates a GitHub Release with four archives, SHA-256 checksums, and generated release notes. Failed jobs publish nothing; rerun the failed workflow after resolving the failure. Released versions should receive a new version and tag for subsequent fixes.
